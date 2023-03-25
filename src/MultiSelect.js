@@ -45,12 +45,18 @@ const InputOption = ({
       getStyles={getStyles}
       innerProps={props}
     >
-      <input type="checkbox" checked={isSelected} className="mr-2" />
+      <input type="checkbox" checked={isSelected} />
       {children}
     </components.Option>
   );
 };
 export const MultiSelect = (props) => {
+  const selectedVals = props.values?.map((x) => x.value);
+  const hiddenOptions =
+    selectedVals?.length > 3 ? selectedVals?.slice(0, 3) : [];
+  const Options = props.options?.filter(
+    (x) => !hiddenOptions.includes(x.value)
+  );
   // isOptionSelected sees previous props.value after onChange
   const valueRef = useRef(props.value);
   valueRef.current = props.value;
@@ -67,7 +73,7 @@ export const MultiSelect = (props) => {
     valueRef.current.some(({ value }) => value === option.value) ||
     isSelectAllSelected();
 
-  const getOptions = () => [selectAllOption, ...props.options];
+  const getOptions = () => [selectAllOption, ...Options];
 
   const getValue = () =>
     isSelectAllSelected() ? [selectAllOption] : props.value;
@@ -104,7 +110,9 @@ export const MultiSelect = (props) => {
       options={getOptions()}
       components={{
         Option: InputOption,
+        MultiValue,
       }}
+      // components={{ MultiValue }}
       value={getValue()}
       onChange={onChange}
       hideSelectedOptions={false}
@@ -112,4 +120,38 @@ export const MultiSelect = (props) => {
       isMulti
     />
   );
+};
+const MoreSelectedBadge = ({ items }) => {
+  const style = {
+    marginLeft: "auto",
+    background: "#d4eefa",
+    borderRadius: "4px",
+    fontFamily: "Open Sans",
+    fontSize: "11px",
+    padding: "3px",
+    order: 99,
+  };
+
+  const title = items.join(", ");
+  const length = items.length;
+  const label = `+ ${length} item${length !== 1 ? "s" : ""} selected`;
+
+  return (
+    <div style={style} title={title}>
+      {label}
+    </div>
+  );
+};
+
+const MultiValue = ({ index, getValue, ...props }) => {
+  const maxToShow = 3;
+  const overflow = getValue()
+    .slice(maxToShow)
+    .map((x) => x.label);
+
+  return index < maxToShow ? (
+    <components.MultiValue {...props} />
+  ) : index === maxToShow ? (
+    <MoreSelectedBadge items={overflow} />
+  ) : null;
 };
